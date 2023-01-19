@@ -853,12 +853,7 @@ func (s *Server) Start() {
 			ConsumePanic(s.TraceClient, s.Hostname, recover())
 		}()
 
-		ctx, cancel := context.WithCancel(context.Background())
-		go func() {
-			// If the server is shutting down, cancel any in-flight flush:
-			<-s.shutdown
-			cancel()
-		}()
+		ctx := context.Background()
 
 		if s.synchronizeInterval {
 			// We want to align our ticker to a multiple of its duration for
