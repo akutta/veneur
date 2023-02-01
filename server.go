@@ -184,7 +184,7 @@ type Server struct {
 
 	parser samplers.Parser
 
-	flushMutex *sync.Mutex
+	flusherWaitGroup *sync.WaitGroup
 }
 
 type internalSource struct {
@@ -492,7 +492,7 @@ func NewFromConfig(config ServerConfig) (*Server, error) {
 		// Allocate the slice, we'll fill it with workers later.
 		Workers: make([]*Worker, max(1, conf.NumWorkers)),
 
-		flushMutex: &sync.Mutex{},
+		flusherWaitGroup: &sync.WaitGroup{},
 	}
 
 	ret.HistogramAggregates.Value = 0
@@ -1438,6 +1438,7 @@ func (s *Server) Shutdown() {
 		ctx, cancel := context.WithTimeout(context.Background(), s.Interval)
 		s.Flush(ctx)
 		cancel()
+		s.flusherWaitGroup.Wait()
 	}
 	graceful.Shutdown()
 	for _, source := range s.sources {
