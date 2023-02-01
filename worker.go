@@ -45,7 +45,7 @@ type Worker struct {
 	imported              int64
 	mutex                 *sync.Mutex
 	traceClient           *trace.Client
-	logger                *logrus.Logger
+	logger                *logrus.Entry
 	wm                    WorkerMetrics
 	stats                 scopedstatsd.Client
 }
@@ -254,7 +254,7 @@ func (wm WorkerMetrics) appendExportedMetric(
 }
 
 // NewWorker creates, and returns a new Worker object.
-func NewWorker(id int, isLocal bool, countUniqueTimeseries bool, cl *trace.Client, logger *logrus.Logger, stats scopedstatsd.Client) *Worker {
+func NewWorker(id int, isLocal bool, countUniqueTimeseries bool, cl *trace.Client, logger *logrus.Entry, stats scopedstatsd.Client) *Worker {
 	return &Worker{
 		id:                    id,
 		isLocal:               isLocal,

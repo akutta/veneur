@@ -98,7 +98,7 @@ type MetricSinkTypes = map[string]struct {
 // Config used to create a new server.
 type ServerConfig struct {
 	Config          Config
-	Logger          *logrus.Logger
+	Logger          *logrus.Entry
 	MetricSinkTypes MetricSinkTypes
 	SourceTypes     SourceTypes
 	SpanSinkTypes   SpanSinkTypes
@@ -348,7 +348,7 @@ func (ingest *ingest) IngestMetric(metric *samplers.UDPMetric) {
 }
 
 func (server *Server) createSources(
-	logger *logrus.Logger, config *Config, sourceTypes SourceTypes,
+	logger *logrus.Entry, config *Config, sourceTypes SourceTypes,
 ) ([]internalSource, error) {
 	sources := []internalSource{}
 	for index, sourceConfig := range config.Sources {
@@ -379,7 +379,7 @@ func (server *Server) createSources(
 }
 
 func (server *Server) createSpanSinks(
-	logger *logrus.Logger, config *Config, sinkTypes SpanSinkTypes,
+	logger *logrus.Entry, config *Config, sinkTypes SpanSinkTypes,
 ) ([]sinks.SpanSink, error) {
 	sinks := []sinks.SpanSink{}
 	for index, sinkConfig := range config.SpanSinks {
@@ -407,7 +407,7 @@ func (server *Server) createSpanSinks(
 }
 
 func (server *Server) createMetricSinks(
-	logger *logrus.Logger, config *Config, sinkTypes MetricSinkTypes,
+	logger *logrus.Entry, config *Config, sinkTypes MetricSinkTypes,
 ) ([]internalMetricSink, error) {
 	sinks := []internalMetricSink{}
 	for index, sinkConfig := range config.MetricSinks {
@@ -475,7 +475,7 @@ func NewFromConfig(config ServerConfig) (*Server, error) {
 			},
 		},
 		Interval:         conf.Interval,
-		logger:           logrus.NewEntry(config.Logger),
+		logger:           config.Logger,
 		metricMaxLength:  conf.MetricMaxLength,
 		numListeningHTTP: new(int32),
 		numReaders:       conf.NumReaders,
@@ -522,7 +522,7 @@ func NewFromConfig(config ServerConfig) (*Server, error) {
 	}
 
 	if conf.Debug {
-		logger.SetLevel(logrus.DebugLevel)
+		logger.Logger.SetLevel(logrus.DebugLevel)
 	}
 
 	mpf := 0
@@ -874,6 +874,7 @@ func (s *Server) Start() {
 				ticker.Stop()
 				return
 			case triggered := <-ticker.C:
+				s.logger.Trace("tick")
 				ctx, cancel := context.WithDeadline(ctx, triggered.Add(s.Interval))
 				s.Flush(ctx)
 				cancel()
